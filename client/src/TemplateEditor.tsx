@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef } from 'react';
 import { FabricImage, Canvas, Rect, Textbox } from 'fabric';
 
 interface TemplateEditorProps {
@@ -21,7 +21,7 @@ function TemplateEditor({ articleTitle, articleSummary, articleImage }: Template
     });
     fabricCanvasRef.current = canvas;
 
-    // Background rectangle
+    // Add background first always
     const background = new Rect({
       left: 0,
       top: 0,
@@ -41,8 +41,6 @@ function TemplateEditor({ articleTitle, articleSummary, articleImage }: Template
           opacity: 0.7,
         });
         canvas.add(img);
-        canvas.sendToBack(img);
-        canvas.sendBackwards(img); // Make sure background is behind image
         canvas.renderAll();
       });
     }
@@ -84,6 +82,7 @@ function TemplateEditor({ articleTitle, articleSummary, articleImage }: Template
   const handleDownload = () => {
     if (!fabricCanvasRef.current) return;
     const dataURL = fabricCanvasRef.current.toDataURL({
+      multiplier: 1,
       format: 'png',
     });
     const link = document.createElement('a');

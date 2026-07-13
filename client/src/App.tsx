@@ -3,9 +3,17 @@ import './App.css'
 import axios from 'axios'
 import TemplateEditor from './TemplateEditor'
 
+interface Article {
+  title: string
+  content: string
+  excerpt: string
+  featuredImage: string
+  url: string
+}
+
 function App() {
   const [url, setUrl] = useState('')
-  const [article, setArticle] = useState(null)
+  const [article, setArticle] = useState<Article | null>(null)
   const [loading, setLoading] = useState(false)
   const [summary, setSummary] = useState('')
   const [platform, setPlatform] = useState('instagram')
