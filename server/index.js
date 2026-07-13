@@ -95,8 +95,8 @@ app.post('/api/generate-summary', async (req, res) => {
     res.json({ summary });
 
   } catch (error) {
-    console.error('Error generating summary:', error);
-    res.status(500).json({ error: 'Failed to generate summary' });
+    console.error('Error generating summary:', error.message, error.response?.data || error);
+    res.status(500).json({ error: 'Failed to generate summary', details: error.message });
   }
 });
 
