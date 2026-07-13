@@ -17,6 +17,16 @@ app.get('/', (req, res) => {
   res.send('SOIM Backend is running!');
 });
 
+const extractImagesFromHtml = (html) => {
+  const regex = /<img[^>]+src="([^">]+)"/g;
+  const images = [];
+  let match;
+  while ((match = regex.exec(html)) !== null) {
+    images.push(match[1]);
+  }
+  return images;
+};
+
 app.post('/api/fetch-article', async (req, res) => {
   try {
     const { url } = req.body;
@@ -38,6 +48,10 @@ app.post('/api/fetch-article', async (req, res) => {
 
     const article = wpResponse.data[0];
     const featuredImage = article._embedded?.['wp:featuredmedia']?.[0]?.source_url || '';
+
+    // Extract all images from content
+    const contentImages = extractImagesFromHtml(article.content?.rendered || '');
+    const allImages = [...new Set([featuredImage, ...contentImages].filter(Boolean))];
     
     // Extract content (strip HTML tags)
     const content = article.content?.rendered?.replace(/<[^>]*>/g, '') || '';
@@ -47,6 +61,7 @@ app.post('/api/fetch-article', async (req, res) => {
       content: content,
       excerpt: article.excerpt?.rendered?.replace(/<[^>]*>/g, '') || '',
       featuredImage: featuredImage,
+      images: allImages,
       url: article.link
     });
 
@@ -58,7 +73,7 @@ app.post('/api/fetch-article', async (req, res) => {
 
 app.post('/api/generate-summary', async (req, res) => {
   try {
-    const { content, platform = 'instagram' } = req.body;
+    const { content, platform = 'instagram', variation = 0 } = req.body;
     if (!content) {
       return res.status(400).json({ error: 'Content is required' });
     }
@@ -70,7 +85,8 @@ app.post('/api/generate-summary', async (req, res) => {
     const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash' });
 
     const maxLength = platform === 'x' ? 240 : 500;
-    const prompt = `قم بإنشاء مختصر تشويقي ومشوق باللغة العربية للمقال التالي، بحيث لا يتجاوز ${maxLength} حرفًا، مع التركيز على النقاط الرئيسية التي تجعل القارئ يريد قراءة المقال كاملاً:\n\n${content}`;
+    const variationPrompt = variation > 0 ? ` (المحاكي رقم ${variation + 1}، جاهز من قبل)` : '';
+    const prompt = `قم بإنشاء مختصر تشويقي ومشوق باللغة العربية للمقال التالي، بحيث لا يتجاوز ${maxLength} حرفًا، مع التركيز على النقاط الرئيسية التي تجعل القارئ يريد قراءة المقال كاملاً${variationPrompt}:\n\n${content}`;
 
     const result = await model.generateContent(prompt);
     const response = await result.response;
